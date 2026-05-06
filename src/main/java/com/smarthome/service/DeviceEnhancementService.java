@@ -41,7 +41,7 @@ public class DeviceEnhancementService {
         Device device = house.findDeviceById(deviceId);
         if (device == null) return;
         if (device.getDriver() instanceof LoggingDeviceDecorator) return;
-        device.setDriver(new LoggingDeviceDecorator(device.getDriver()));
+        device.setDriver(new LoggingDeviceDecorator(device.getDriver(), device.getName()));
     }
 
     // === Composite ===

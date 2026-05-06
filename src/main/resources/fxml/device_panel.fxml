@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.geometry.Insets?>
+
+<VBox xmlns:fx="http://javafx.com/fxml"
+      fx:controller="com.smarthome.controller.DevicePanelController"
+      stylesheets="@../css/style.css"
+      prefWidth="280" spacing="8"
+      styleClass="side-panel">
+    <padding><Insets top="12" right="12" bottom="12" left="12"/></padding>
+
+    <Label text="УСТРОЙСТВА" styleClass="app-title"/>
+
+    <Label text="Комната" styleClass="panel-title"/>
+    <ComboBox fx:id="roomCombo" maxWidth="Infinity"/>
+
+    <Separator/>
+
+    <ListView fx:id="deviceListView" prefHeight="200" styleClass="dark-list" VBox.vgrow="ALWAYS"/>
+
+    <HBox spacing="6">
+        <Button text="+ Устройство" onAction="#onAddDevice" styleClass="btn-primary"
+                HBox.hgrow="ALWAYS" maxWidth="Infinity"/>
+        <Button text="−" onAction="#onRemoveDevice" styleClass="btn-danger" prefWidth="36"/>
+    </HBox>
+
+    <Button text="Вкл / Выкл" onAction="#onToggleDevice" styleClass="btn-toggle"
+            maxWidth="Infinity"/>
+
+    <HBox spacing="6">
+        <Button text="Логирование" onAction="#onEnableLogging" styleClass="btn-secondary"
+                HBox.hgrow="ALWAYS" maxWidth="Infinity"/>
+        <Button text="+ Группа" onAction="#onCreateGroup" styleClass="btn-secondary"
+                HBox.hgrow="ALWAYS" maxWidth="Infinity"/>
+    </HBox>
+
+    <Separator/>
+
+    <Label fx:id="houseInfoLabel" text="" styleClass="house-info" wrapText="true"/>
+</VBox>

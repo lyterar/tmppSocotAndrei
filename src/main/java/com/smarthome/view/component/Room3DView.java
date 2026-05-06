@@ -55,9 +55,15 @@ public class Room3DView extends Pane {
     private double orbitLastX;
     private double orbitLastY;
 
-    // roomId -> 3D модель
+    // roomId -> 3D модель комнаты (боксы)
     private final Map<String, Room3DModel> roomModels = new HashMap<>();
     private String highlightedRoomId;
+
+    // roomId -> OBJ-модель, заменяющая геометрию комнаты
+    private final Map<String, Group> roomObjOverrides = new HashMap<>();
+
+    // Внешние модели, добавленные глобально (не привязаны к комнате)
+    private final Group externalModels = new Group();
 
     public Room3DView() {
         buildScene();
@@ -83,7 +89,7 @@ public class Room3DView extends Pane {
         mainLight.setTranslateY(-500);
         mainLight.setTranslateZ(-300);
 
-        root3D.getChildren().addAll(ambient, mainLight, orbitCameraGroup);
+        root3D.getChildren().addAll(ambient, mainLight, orbitCameraGroup, externalModels);
 
         subScene = new SubScene(root3D, 700, 500, true, SceneAntialiasing.BALANCED);
         subScene.setFill(Color.web("#1a1a2e"));
@@ -138,6 +144,8 @@ public class Room3DView extends Pane {
     /** Перерисовывает весь дом */
     public void drawHouse(House house) {
         root3D.getChildren().removeAll(roomModels.values());
+        // Убираем OBJ-overrides, они будут добавлены заново ниже
+        root3D.getChildren().removeAll(roomObjOverrides.values());
         roomModels.clear();
 
         if (house == null) return;
@@ -156,6 +164,15 @@ public class Room3DView extends Pane {
 
             if (room.getId().equals(highlightedRoomId)) {
                 model.setHighlighted(true);
+            }
+
+            // Если комнате назначена OBJ-модель — прячем стены/пол, ставим OBJ на ту же позицию
+            Group objOverride = roomObjOverrides.get(room.getId());
+            if (objOverride != null) {
+                model.setStructureVisible(false);
+                objOverride.setTranslateX(posX);
+                objOverride.setTranslateZ(posZ);
+                root3D.getChildren().add(objOverride);
             }
 
             // Перетаскивание устройств мышью (только в orbit-режиме)
@@ -315,5 +332,44 @@ public class Room3DView extends Pane {
 
     public boolean isFpsMode() {
         return fpsMode;
+    }
+
+    // =========================================================
+    //  Внешние 3D модели (загруженные через OBJ)
+    // =========================================================
+
+    /** Добавить загруженную OBJ-модель в сцену (глобально, без привязки к комнате). */
+    public void addExternalModel(javafx.scene.Group model) {
+        externalModels.getChildren().add(model);
+    }
+
+    /** Удалить все внешние (глобальные) модели из сцены. */
+    public void clearExternalModels() {
+        externalModels.getChildren().clear();
+    }
+
+    /**
+     * Назначить OBJ-модель конкретной комнате.
+     * Заменяет геометрию комнаты (стены/пол), устройства и интерактивность сохраняются.
+     * Вызывает перерисовку дома.
+     */
+    public void assignObjToRoom(String roomId, Group model, House house) {
+        roomObjOverrides.put(roomId, model);
+        drawHouse(house);
+    }
+
+    /**
+     * Снять OBJ-модель с комнаты, вернуть стандартные стены.
+     */
+    public void clearRoomObj(String roomId, House house) {
+        roomObjOverrides.remove(roomId);
+        drawHouse(house);
+    }
+
+    /** Снять OBJ-модели со всех комнат и убрать глобальные. */
+    public void clearAllModels(House house) {
+        roomObjOverrides.clear();
+        externalModels.getChildren().clear();
+        drawHouse(house);
     }
 }

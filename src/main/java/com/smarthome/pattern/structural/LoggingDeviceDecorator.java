@@ -1,7 +1,9 @@
 package com.smarthome.pattern.structural;
 
+import com.smarthome.event.DeviceEvent;
 import com.smarthome.model.device.DeviceDriver;
 import com.smarthome.model.device.DeviceType;
+import com.smarthome.pattern.creational.SmartHomeEngine;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -13,28 +15,31 @@ import java.util.Map;
  * ПАТТЕРН: Decorator
  *
  * Оборачивает любой DeviceDriver, добавляя логирование всех действий.
- 
+ * Каждая запись публикуется в EventBus (тип "device_log") — окно журнала
+ * подписывается на этот тип и отображает записи в реальном времени.
  */
 public class LoggingDeviceDecorator implements DeviceDriver {
 
     private final DeviceDriver wrapped;
+    private final String deviceName;
     private final List<String> log = new ArrayList<>();
     private static final DateTimeFormatter FORMAT =
             DateTimeFormatter.ofPattern("HH:mm:ss");
 
-    public LoggingDeviceDecorator(DeviceDriver wrapped) {
+    public LoggingDeviceDecorator(DeviceDriver wrapped, String deviceName) {
         this.wrapped = wrapped;
+        this.deviceName = deviceName;
     }
 
     @Override
     public void turnOn() {
-        addLog("turnOn()");
+        addLog("включено");
         wrapped.turnOn();
     }
 
     @Override
     public void turnOff() {
-        addLog("turnOff()");
+        addLog("выключено");
         wrapped.turnOff();
     }
 
@@ -50,7 +55,7 @@ public class LoggingDeviceDecorator implements DeviceDriver {
 
     @Override
     public void setParameter(String key, Object value) {
-        addLog("setParameter(" + key + ", " + value + ")");
+        addLog("параметр " + key + " = " + value);
         wrapped.setParameter(key, value);
     }
 
@@ -64,12 +69,10 @@ public class LoggingDeviceDecorator implements DeviceDriver {
         return wrapped.getDeviceType();
     }
 
-    /** Получить лог действий */
     public List<String> getLog() {
         return new ArrayList<>(log);
     }
 
-    /** Последние N записей */
     public List<String> getRecentLog(int count) {
         int start = Math.max(0, log.size() - count);
         return new ArrayList<>(log.subList(start, log.size()));
@@ -77,8 +80,11 @@ public class LoggingDeviceDecorator implements DeviceDriver {
 
     private void addLog(String action) {
         String time = LocalDateTime.now().format(FORMAT);
-        String entry = "[" + time + "] " + getDeviceType().getDisplayName() + ": " + action;
+        String entry = "[" + time + "] " + deviceName + " (" + getDeviceType().getDisplayName() + "): " + action;
         log.add(entry);
-        System.out.println(entry); // Также выводим в консоль
+        System.out.println(entry);
+        // Публикуем запись для окна журнала
+        SmartHomeEngine.getInstance().getEventBus().publish(
+                new DeviceEvent("device_log", deviceName, entry));
     }
 }

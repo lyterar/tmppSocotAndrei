@@ -2,6 +2,7 @@ package com.smarthome.view.component;
 
 import com.smarthome.model.device.Device;
 import com.smarthome.model.room.Room;
+import com.smarthome.view.loader.ModelRegistry;
 
 import javafx.scene.Group;
 import javafx.scene.paint.Color;
@@ -10,6 +11,7 @@ import javafx.scene.shape.Box;
 import javafx.scene.text.Font;
 import javafx.scene.text.Text;
 import javafx.scene.transform.Rotate;
+import javafx.scene.transform.Scale;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -26,10 +28,14 @@ public class Room3DModel extends Group {
     private static final double WALL_THICKNESS = 4;
 
     private final Room room;
+    private Box floor;
     private final Box[] walls = new Box[4];
     private final PhongMaterial wallMaterial;
     private final PhongMaterial wallHighlightMaterial;
     private final PhongMaterial wallHoverMaterial;
+
+    // true когда геометрия комнаты заменена OBJ-моделью из реестра
+    private boolean hasCustomModel = false;
 
     // Состояния подсветки: selected устойчивое, hovered временное
     private boolean selected = false;
@@ -61,14 +67,25 @@ public class Room3DModel extends Group {
     }
 
     private void buildRoom() {
+        // Если для этого типа комнаты загружена OBJ-модель — используем её
+        Group registryModel = ModelRegistry.getInstance().createRoomInstance(room.getType());
+        if (registryModel != null) {
+            hasCustomModel = true;
+            double maxDim = Math.max(room.getWidth(), room.getHeight());
+            double scale  = maxDim / 60.0; // ObjLoader масштабирует к 60 единицам
+            registryModel.getTransforms().add(new Scale(scale, scale, scale));
+            floor = new Box(0, 0, 0); // заглушка чтобы setStructureVisible не падал
+            getChildren().add(registryModel);
+            return;
+        }
+
+        // Стандартная геометрия: пол + 4 стены
         double floorW = room.getWidth();
         double floorD = room.getHeight();
 
-        // Пол
-        Box floor = new Box(floorW, 2, floorD);
+        floor = new Box(floorW, 2, floorD);
         floor.setMaterial(new PhongMaterial(Color.web(room.getType().getColor())));
 
-        // Стены: front (+Z), back (-Z), left (-X), right (+X)
         walls[0] = new Box(floorW, WALL_H, WALL_THICKNESS);
         walls[0].setTranslateZ(floorD / 2);
         walls[0].setTranslateY(-WALL_H / 2);
@@ -85,9 +102,7 @@ public class Room3DModel extends Group {
         walls[3].setTranslateX(floorW / 2);
         walls[3].setTranslateY(-WALL_H / 2);
 
-        for (Box wall : walls) {
-            wall.setMaterial(wallMaterial);
-        }
+        for (Box wall : walls) wall.setMaterial(wallMaterial);
 
         getChildren().add(floor);
         getChildren().addAll(walls);
@@ -163,18 +178,24 @@ public class Room3DModel extends Group {
         applyWallMaterial();
     }
 
+    /**
+     * Прячет/показывает геометрию комнаты (пол + стены).
+     * Вызывается когда комнате назначена внешняя OBJ-модель — тогда
+     * структуру скрываем, но оставляем устройства и обработчики мыши.
+     */
+    public void setStructureVisible(boolean visible) {
+        if (hasCustomModel) return; // OBJ из реестра — стены не управляются здесь
+        floor.setVisible(visible);
+        for (Box wall : walls) if (wall != null) wall.setVisible(visible);
+    }
+
     /** Выбирает актуальный материал стен в зависимости от состояния */
     private void applyWallMaterial() {
+        if (hasCustomModel) return; // OBJ из реестра — стены не перекрашиваем
         PhongMaterial mat;
-        if (selected) {
-            mat = wallHighlightMaterial;           // выбрана — ярко
-        } else if (hovered) {
-            mat = wallHoverMaterial;               // hover — промежуточный
-        } else {
-            mat = wallMaterial;                    // обычная
-        }
-        for (Box wall : walls) {
-            wall.setMaterial(mat);
-        }
+        if (selected)      mat = wallHighlightMaterial;
+        else if (hovered)  mat = wallHoverMaterial;
+        else               mat = wallMaterial;
+        for (Box wall : walls) if (wall != null) wall.setMaterial(mat);
     }
 }

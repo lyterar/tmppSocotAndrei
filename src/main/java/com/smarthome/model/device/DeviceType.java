@@ -14,7 +14,7 @@ public enum DeviceType {
 
     private final String displayName;
     private final String icon;
-
+    
     DeviceType(String displayName, String icon) {
         this.displayName = displayName;
         this.icon = icon;

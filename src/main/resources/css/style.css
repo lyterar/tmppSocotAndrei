@@ -166,6 +166,19 @@
     -fx-font-size: 12px;
 }
 
+/* === Журнал логирования === */
+
+.log-area {
+    -fx-background-color: #0d0d1a;
+    -fx-text-fill: #88ffaa;
+    -fx-font-family: "Monospaced";
+    -fx-font-size: 12px;
+    -fx-border-color: #3a3a5c;
+    -fx-border-radius: 4;
+    -fx-background-radius: 4;
+    -fx-control-inner-background: #0d0d1a;
+}
+
 /* === Информация о доме === */
 
 .house-info {

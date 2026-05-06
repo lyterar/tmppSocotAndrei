@@ -1,6 +1,7 @@
 package com.smarthome.view.component;
 
 import com.smarthome.model.device.DeviceType;
+import com.smarthome.view.loader.ModelRegistry;
 
 import javafx.scene.Group;
 import javafx.scene.PointLight;
@@ -9,6 +10,7 @@ import javafx.scene.paint.PhongMaterial;
 import javafx.scene.shape.Box;
 import javafx.scene.shape.Cylinder;
 import javafx.scene.shape.Sphere;
+import javafx.scene.transform.Scale;
 
 /**
  * Фабрика 3D моделей устройств.
@@ -16,14 +18,24 @@ import javafx.scene.shape.Sphere;
  */
 public class Device3DModel {
 
+    // Масштаб для OBJ-моделей из реестра: ObjLoader создаёт 60 единиц, примитивы ~14-20
+    private static final double OBJ_SCALE = 0.3;
+
     public static Group createModel(DeviceType type, boolean isOn) {
+        // Если для этого типа загружена пользовательская OBJ-модель — используем её
+        Group fromRegistry = ModelRegistry.getInstance().createDeviceInstance(type);
+        if (fromRegistry != null) {
+            fromRegistry.getTransforms().add(new Scale(OBJ_SCALE, OBJ_SCALE, OBJ_SCALE));
+            return fromRegistry;
+        }
+        // Иначе — стандартный примитив
         return switch (type) {
-            case LIGHT     -> createLamp(isOn);
+            case LIGHT      -> createLamp(isOn);
             case THERMOSTAT -> createThermostat(isOn);
-            case SENSOR    -> createSensor(isOn);
-            case LOCK      -> createLock(isOn);
-            case CAMERA    -> createCamera();
-            case SPEAKER   -> createSpeaker();
+            case SENSOR     -> createSensor(isOn);
+            case LOCK       -> createLock(isOn);
+            case CAMERA     -> createCamera();
+            case SPEAKER    -> createSpeaker();
         };
     }
 

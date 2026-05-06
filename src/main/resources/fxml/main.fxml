@@ -9,16 +9,16 @@
 <BorderPane xmlns:fx="http://javafx.com/fxml"
             fx:controller="com.smarthome.controller.MainController"
             stylesheets="@../css/style.css"
-            prefWidth="1200" prefHeight="750">
+            prefWidth="1100" prefHeight="700">
 
-    <!-- Боковое меню слева -->
+    <!-- Боковое меню слева: комнаты и переключение окон -->
     <left>
-        <VBox prefWidth="280" styleClass="side-panel" spacing="8">
+        <VBox prefWidth="240" styleClass="side-panel" spacing="8">
             <padding><Insets top="12" right="12" bottom="12" left="12"/></padding>
 
             <Label text="УМНЫЙ ДОМ" styleClass="app-title"/>
 
-            <!-- Переключатель режимов вида -->
+            <!-- Режимы просмотра -->
             <HBox spacing="6">
                 <Button text="2D" onAction="#onSwitch2D" styleClass="btn-secondary"
                         HBox.hgrow="ALWAYS" maxWidth="Infinity"/>
@@ -31,7 +31,7 @@
             <Separator/>
 
             <Label text="Комнаты" styleClass="panel-title"/>
-            <ListView fx:id="roomListView" prefHeight="155" styleClass="dark-list"/>
+            <ListView fx:id="roomListView" prefHeight="220" styleClass="dark-list" VBox.vgrow="ALWAYS"/>
 
             <HBox spacing="6">
                 <Button text="+ Комната" onAction="#onAddRoom" styleClass="btn-primary"
@@ -41,54 +41,32 @@
 
             <Separator/>
 
-            <Label text="Устройства" styleClass="panel-title"/>
-            <ListView fx:id="deviceListView" prefHeight="130" styleClass="dark-list"/>
-
-            <HBox spacing="6">
-                <Button text="+ Устройство" onAction="#onAddDevice" styleClass="btn-primary"
-                        HBox.hgrow="ALWAYS" maxWidth="Infinity"/>
-                <Button text="−" onAction="#onRemoveDevice" styleClass="btn-danger" prefWidth="36"/>
-            </HBox>
-
-            <Button text="Вкл / Выкл" onAction="#onToggleDevice" styleClass="btn-toggle"
-                    maxWidth="Infinity"/>
-            <HBox spacing="6">
-                <Button text="Логирование" onAction="#onEnableLogging" styleClass="btn-secondary"
-                        HBox.hgrow="ALWAYS" maxWidth="Infinity"/>
-                <Button text="+ Группа" onAction="#onCreateGroup" styleClass="btn-secondary"
-                        HBox.hgrow="ALWAYS" maxWidth="Infinity"/>
-            </HBox>
+            <!-- Кнопки открытия/закрытия дополнительных окон -->
+            <Label text="Панели" styleClass="panel-title"/>
+            <Button text="Устройства" onAction="#onToggleDevicePanel"
+                    styleClass="btn-secondary" maxWidth="Infinity"/>
+            <Button text="Автоматизация" onAction="#onToggleAutomation"
+                    styleClass="btn-secondary" maxWidth="Infinity"/>
+            <Button text="Журнал логирования" onAction="#onToggleLog"
+                    styleClass="btn-secondary" maxWidth="Infinity"/>
 
             <Separator/>
 
-            <Label text="Автоматизация" styleClass="panel-title"/>
-            <ComboBox fx:id="automationCombo" promptText="Выбрать режим" maxWidth="Infinity"/>
-            <Button text="Применить" onAction="#onApplyAutomation" styleClass="btn-secondary"
-                    maxWidth="Infinity"/>
+            <Label text="3D Модели" styleClass="panel-title"/>
+            <Button text="Загрузить .obj модель" onAction="#onLoadObjModel"
+                    styleClass="btn-secondary" maxWidth="Infinity"/>
+            <Button text="Убрать все модели" onAction="#onClearObjModels"
+                    styleClass="btn-secondary" maxWidth="Infinity"/>
 
             <Separator/>
 
-            <HBox spacing="6">
-                <Button fx:id="undoButton" text="Отмена" onAction="#onUndo"
-                        HBox.hgrow="ALWAYS" maxWidth="Infinity"/>
-                <Button fx:id="redoButton" text="Повтор" onAction="#onRedo"
-                        HBox.hgrow="ALWAYS" maxWidth="Infinity"/>
-            </HBox>
-
-            <HBox spacing="6">
-                <Button text="Сохранить" onAction="#onSaveHouse" styleClass="btn-secondary"
-                        HBox.hgrow="ALWAYS" maxWidth="Infinity"/>
-                <Button text="Загрузить" onAction="#onLoadHouse" styleClass="btn-secondary"
-                        HBox.hgrow="ALWAYS" maxWidth="Infinity"/>
-            </HBox>
-
-            <Separator/>
+            <Button text="Выход" onAction="#onExit" styleClass="btn-danger" maxWidth="Infinity"/>
 
             <Label fx:id="houseInfoLabel" text="0 комнат" styleClass="house-info" wrapText="true"/>
         </VBox>
     </left>
 
-    <!-- Центр: 2D или 3D вид (переключаются через visible) -->
+    <!-- Центр: 2D или 3D вид -->
     <center>
         <StackPane>
             <RoomCanvas fx:id="roomCanvas" visible="false"/>

@@ -1,70 +1,52 @@
 package com.smarthome.controller;
 
+import com.smarthome.AppContext;
+import com.smarthome.WindowManager;
 import com.smarthome.event.DeviceEvent;
-import com.smarthome.model.device.Device;
-import com.smarthome.model.house.House;
 import com.smarthome.model.room.Room;
-import com.smarthome.pattern.behavioral.AutomationStrategy;
-import com.smarthome.pattern.behavioral.CommandHistory;
-import com.smarthome.pattern.behavioral.ToggleDeviceCommand;
-import com.smarthome.pattern.structural.SmartHomeFacade;
-import com.smarthome.service.AutomationService;
-import com.smarthome.service.HouseSaveService;
 import com.smarthome.pattern.creational.SmartHomeEngine;
+import com.smarthome.pattern.structural.SmartHomeFacade;
 import com.smarthome.view.component.Room3DView;
 import com.smarthome.view.component.RoomCanvas;
-import com.smarthome.view.dialog.AddDeviceDialog;
 import com.smarthome.view.dialog.AddRoomDialog;
-import com.smarthome.view.dialog.CreateGroupDialog;
+import com.smarthome.view.dialog.LoadModelDialog;
+import com.smarthome.view.loader.ModelRegistry;
+import com.smarthome.view.loader.ObjLoader;
 
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import javafx.concurrent.Task;
 import javafx.fxml.FXML;
+import javafx.scene.Group;
 import javafx.scene.control.*;
-import javafx.stage.FileChooser;
-
-import java.io.File;
+import javafx.stage.Stage;
 
 /**
- * Главный контроллер приложения.
- * Связывает UI (FXML) с логикой (Facade).
+ * Контроллер главного окна.
+ * Отвечает за список комнат и переключение режимов просмотра (2D/3D/FPS).
+ * Управление устройствами — в DevicePanelController, автоматизация — в AutomationController.
  */
 public class MainController {
 
-    // --- FXML элементы ---
     @FXML private Room3DView room3DView;
     @FXML private RoomCanvas roomCanvas;
     @FXML private ListView<Room> roomListView;
-    @FXML private ListView<Device> deviceListView;
     @FXML private Label statusLabel;
     @FXML private Label houseInfoLabel;
-    @FXML private ComboBox<AutomationStrategy> automationCombo;
-    @FXML private Button undoButton;
-    @FXML private Button redoButton;
 
-    // --- Сервисы ---
-    private SmartHomeFacade facade;
-    private AutomationService automationService;
-    private CommandHistory commandHistory;
-    private HouseSaveService saveService;
-
-    // --- Данные ---
-    private ObservableList<Room> roomItems = FXCollections.observableArrayList();
-    private ObservableList<Device> deviceItems = FXCollections.observableArrayList();
+    private final SmartHomeFacade facade = new SmartHomeFacade();
+    private final ObservableList<Room> roomItems = FXCollections.observableArrayList();
     private Room selectedRoom;
+    // Флаг подавляет событие room_selected во время программного обновления списка
+    private boolean suppressRoomSelectionEvent = false;
+    private WindowManager windowManager;
 
     @FXML
     public void initialize() {
-        facade = new SmartHomeFacade();
-        automationService = new AutomationService();
-        commandHistory = new CommandHistory();
-        saveService = new HouseSaveService(SmartHomeEngine.getInstance().getDeviceFactory());
-
         setupRoomList();
-        setupDeviceList();
-        setupAutomation();
-        setupEventListeners();
+        // Обновляем главное окно при любых событиях в доме
+        facade.getEventBus().subscribeAll(event -> Platform.runLater(this::refreshAll));
         updateStatus("Готово");
         refreshAll();
     }
@@ -84,48 +66,11 @@ public class MainController {
                 (obs, oldVal, newVal) -> onRoomSelected(newVal));
     }
 
-    private void setupDeviceList() {
-        deviceListView.setItems(deviceItems);
-        deviceListView.getSelectionModel().setSelectionMode(javafx.scene.control.SelectionMode.MULTIPLE);
-        deviceListView.setCellFactory(lv -> new ListCell<>() {
-            @Override
-            protected void updateItem(Device device, boolean empty) {
-                super.updateItem(device, empty);
-                setText(empty || device == null ? null : device.toString());
-            }
-        });
-    }
-
-    private void setupAutomation() {
-        automationCombo.getItems().addAll(automationService.getAvailableStrategies());
-        automationCombo.setCellFactory(lv -> new ListCell<>() {
-            @Override
-            protected void updateItem(AutomationStrategy s, boolean empty) {
-                super.updateItem(s, empty);
-                setText(empty || s == null ? null : s.getName());
-            }
-        });
-        automationCombo.setButtonCell(new ListCell<>() {
-            @Override
-            protected void updateItem(AutomationStrategy s, boolean empty) {
-                super.updateItem(s, empty);
-                setText(empty || s == null ? "Выбрать режим" : s.getName());
-            }
-        });
-    }
-
-    private void setupEventListeners() {
-        // Подписываемся на все события для обновления UI
-        facade.getEventBus().subscribeAll(event ->
-                Platform.runLater(this::refreshAll));
-    }
-
-    // === Обработчики кнопок (вызываются из FXML) ===
+    // === Обработчики комнат ===
 
     @FXML
     private void onAddRoom() {
-        AddRoomDialog dialog = new AddRoomDialog();
-        dialog.showAndWait().ifPresent(result -> {
+        new AddRoomDialog().showAndWait().ifPresent(result -> {
             facade.createRoom(result.name(), result.type(),
                     50 + roomItems.size() * 30, 50 + roomItems.size() * 30);
             updateStatus("Комната добавлена: " + result.name());
@@ -136,7 +81,6 @@ public class MainController {
     private void onRemoveRoom() {
         Room room = roomListView.getSelectionModel().getSelectedItem();
         if (room == null) return;
-
         Alert confirm = new Alert(Alert.AlertType.CONFIRMATION,
                 "Удалить комнату \"" + room.getName() + "\"?");
         confirm.showAndWait().ifPresent(btn -> {
@@ -147,70 +91,7 @@ public class MainController {
         });
     }
 
-    @FXML
-    private void onAddDevice() {
-        if (selectedRoom == null) {
-            showWarning("Сначала выберите комнату");
-            return;
-        }
-
-        AddDeviceDialog dialog = new AddDeviceDialog();
-        dialog.showAndWait().ifPresent(result -> {
-            facade.addDeviceToRoom(selectedRoom.getId(), result.name(), result.type());
-            updateStatus("Устройство добавлено: " + result.name());
-        });
-    }
-
-    @FXML
-    private void onRemoveDevice() {
-        Device device = deviceListView.getSelectionModel().getSelectedItem();
-        if (device == null || selectedRoom == null) return;
-
-        facade.removeDeviceFromRoom(selectedRoom.getId(), device.getId());
-        updateStatus("Устройство удалено");
-    }
-
-    @FXML
-    private void onToggleDevice() {
-        Device device = deviceListView.getSelectionModel().getSelectedItem();
-        if (device == null) return;
-
-        ToggleDeviceCommand cmd = new ToggleDeviceCommand(device);
-        commandHistory.executeCommand(cmd);
-        facade.getEventBus().publish(new DeviceEvent("device_toggled", device.getId()));
-        updateUndoRedo();
-        updateStatus(device.getName() + " " + (device.isOn() ? "включено" : "выключено"));
-    }
-
-    @FXML
-    private void onEnableLogging() {
-        Device device = deviceListView.getSelectionModel().getSelectedItem();
-        if (device == null) {
-            showWarning("Сначала выберите устройство");
-            return;
-        }
-        facade.enableLogging(device.getId());
-        updateStatus("Логирование включено: " + device.getName());
-    }
-
-    @FXML
-    private void onCreateGroup() {
-        if (selectedRoom == null) {
-            showWarning("Сначала выберите комнату");
-            return;
-        }
-        if (selectedRoom.getDevices().isEmpty()) {
-            showWarning("В комнате нет устройств для объединения");
-            return;
-        }
-
-        CreateGroupDialog dialog = new CreateGroupDialog(selectedRoom.getDevices());
-        dialog.showAndWait().ifPresent(result -> {
-            Device group = facade.createDeviceGroup(
-                    selectedRoom.getId(), result.groupName(), result.groupType(), result.deviceIds());
-            updateStatus("Группа создана: " + group.getName() + " (" + result.deviceIds().size() + " устройств)");
-        });
-    }
+    // === Переключение режимов вида ===
 
     @FXML
     private void onSwitch2D() {
@@ -239,81 +120,83 @@ public class MainController {
         }
         roomCanvas.setVisible(false);
         room3DView.setVisible(true);
-        room3DView.drawHouse(facade.getHouse()); // убедимся что модели актуальны
+        room3DView.drawHouse(facade.getHouse());
         room3DView.enterFpsMode(room);
         updateStatus("FPS: " + room.getName() + " | WASD движение, мышь взгляд, ESC выход");
     }
 
-    @FXML
-    private void onApplyAutomation() {
-        AutomationStrategy strategy = automationCombo.getValue();
-        if (strategy == null) {
-            showWarning("Выберите режим автоматизации");
-            return;
-        }
+    // === Управление дополнительными окнами ===
 
-        if (selectedRoom != null) {
-            automationService.applyStrategy(strategy, selectedRoom);
-            updateStatus(strategy.getName() + " применён к " + selectedRoom.getName());
-        } else {
-            automationService.applyToAll(strategy);
-            updateStatus(strategy.getName() + " применён ко всему дому");
-        }
+    @FXML
+    private void onToggleDevicePanel() {
+        getWindowManager().toggleDevicePanel();
     }
 
     @FXML
-    private void onUndo() {
-        if (commandHistory.undo()) {
-            refreshAll();
-            updateUndoRedo();
-            updateStatus("Отменено");
-        }
+    private void onToggleAutomation() {
+        getWindowManager().toggleAutomation();
     }
 
     @FXML
-    private void onRedo() {
-        if (commandHistory.redo()) {
-            refreshAll();
-            updateUndoRedo();
-            updateStatus("Повторено");
-        }
+    private void onToggleLog() {
+        getWindowManager().toggleLog();
     }
 
     @FXML
-    private void onSaveHouse() {
-        FileChooser chooser = new FileChooser();
-        chooser.setTitle("Сохранить дом");
-        chooser.getExtensionFilters().add(
-                new FileChooser.ExtensionFilter("JSON", "*.json"));
-        chooser.setInitialFileName("my_house.json");
-        File file = chooser.showSaveDialog(room3DView.getScene().getWindow());
-        if (file != null) {
-            try {
-                saveService.save(facade.getHouse(), file.toPath());
-                updateStatus("Сохранено: " + file.getName());
-            } catch (Exception e) {
-                showWarning("Ошибка сохранения: " + e.getMessage());
-            }
-        }
+    private void onLoadObjModel() {
+        LoadModelDialog dialog = new LoadModelDialog(
+                (Stage) room3DView.getScene().getWindow());
+        dialog.showAndWait().ifPresent(result -> {
+            String url = result.url();
+            String modelName = url.substring(url.lastIndexOf('/') + 1);
+            updateStatus("Загрузка модели...");
+
+            Task<Group> task = new Task<>() {
+                @Override
+                protected Group call() throws Exception {
+                    return new ObjLoader().loadUrl(url);
+                }
+            };
+            task.setOnSucceeded(e -> {
+                Group model = task.getValue();
+                room3DView.setVisible(true);
+                roomCanvas.setVisible(false);
+
+                if (result.deviceType() != null) {
+                    ModelRegistry.getInstance().registerForDeviceType(result.deviceType(), model);
+                    AppContext.getInstance().getDatabase()
+                            .saveModelEntry("DEVICE", result.deviceType().name(), url);
+                    room3DView.drawHouse(facade.getHouse());
+                    updateStatus("Модель «" + modelName + "» → все устройства типа «"
+                            + result.deviceType().getDisplayName() + "»");
+                } else if (result.roomType() != null) {
+                    ModelRegistry.getInstance().registerForRoomType(result.roomType(), model);
+                    AppContext.getInstance().getDatabase()
+                            .saveModelEntry("ROOM", result.roomType().name(), url);
+                    room3DView.drawHouse(facade.getHouse());
+                    updateStatus("Модель «" + modelName + "» → все комнаты типа «"
+                            + result.roomType().getDisplayName() + "»");
+                } else {
+                    room3DView.addExternalModel(model);
+                    updateStatus("Модель загружена в сцену: " + modelName);
+                }
+            });
+            task.setOnFailed(e -> {
+                updateStatus("Ошибка загрузки: " + task.getException().getMessage());
+                new Alert(Alert.AlertType.ERROR,
+                        "Не удалось загрузить модель:\n" + task.getException().getMessage())
+                        .showAndWait();
+            });
+            new Thread(task, "obj-loader").start();
+        });
     }
 
     @FXML
-    private void onLoadHouse() {
-        FileChooser chooser = new FileChooser();
-        chooser.setTitle("Загрузить дом");
-        chooser.getExtensionFilters().add(
-                new FileChooser.ExtensionFilter("JSON", "*.json"));
-        File file = chooser.showOpenDialog(room3DView.getScene().getWindow());
-        if (file != null) {
-            try {
-                House house = saveService.load(file.toPath());
-                SmartHomeEngine.getInstance().setHouse(house);
-                refreshAll();
-                updateStatus("Загружено: " + file.getName());
-            } catch (Exception e) {
-                showWarning("Ошибка загрузки: " + e.getMessage());
-            }
-        }
+    private void onClearObjModels() {
+        ModelRegistry.getInstance().clearAll();
+        room3DView.clearAllModels(facade.getHouse());
+        AppContext.getInstance().getDatabase().clearModelRegistry();
+        updateStatus("Все модели удалены");
     }
 
     @FXML
@@ -323,37 +206,43 @@ public class MainController {
 
     // === Внутренние методы ===
 
-    private void onRoomSelected(Room room) {
-        selectedRoom = room;
-        deviceItems.clear();
-        if (room != null) {
-            deviceItems.addAll(room.getDevices());
-            room3DView.highlightRoom(room);
+    private WindowManager getWindowManager() {
+        if (windowManager == null) {
+            windowManager = new WindowManager((Stage) room3DView.getScene().getWindow());
         }
+        return windowManager;
+    }
+
+    private void onRoomSelected(Room room) {
+        if (suppressRoomSelectionEvent) return;
+        selectedRoom = room;
+        if (room != null) room3DView.highlightRoom(room);
+        // Уведомляем другие окна через EventBus
+        String roomId = room != null ? room.getId() : "";
+        SmartHomeEngine.getInstance().getEventBus().publish(
+                new DeviceEvent("room_selected", roomId));
     }
 
     private void refreshAll() {
-        roomItems.setAll(facade.getRooms());
-        if (selectedRoom != null) {
-            // Обновляем ссылку на комнату (могла пересоздаться)
-            selectedRoom = facade.getHouse().findRoomById(selectedRoom.getId());
+        suppressRoomSelectionEvent = true;
+        try {
+            roomItems.setAll(facade.getRooms());
             if (selectedRoom != null) {
-                deviceItems.setAll(selectedRoom.getDevices());
-            } else {
-                deviceItems.clear();
+                Room updated = facade.getHouse().findRoomById(selectedRoom.getId());
+                selectedRoom = updated;
+                if (updated != null) {
+                    roomListView.getSelectionModel().select(updated);
+                    room3DView.highlightRoom(updated);
+                } else {
+                    roomListView.getSelectionModel().clearSelection();
+                }
             }
+        } finally {
+            suppressRoomSelectionEvent = false;
         }
         if (!room3DView.isFpsMode()) room3DView.drawHouse(facade.getHouse());
         if (roomCanvas.isVisible()) roomCanvas.drawHouse(facade.getHouse());
         houseInfoLabel.setText(facade.getHouseSummary());
-        updateUndoRedo();
-    }
-
-    private void updateUndoRedo() {
-        undoButton.setDisable(!commandHistory.canUndo());
-        redoButton.setDisable(!commandHistory.canRedo());
-        undoButton.setTooltip(new Tooltip(commandHistory.getUndoDescription()));
-        redoButton.setTooltip(new Tooltip(commandHistory.getRedoDescription()));
     }
 
     private void updateStatus(String text) {
@@ -361,7 +250,6 @@ public class MainController {
     }
 
     private void showWarning(String message) {
-        Alert alert = new Alert(Alert.AlertType.WARNING, message);
-        alert.showAndWait();
+        new Alert(Alert.AlertType.WARNING, message).showAndWait();
     }
 }

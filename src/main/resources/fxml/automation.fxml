@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.geometry.Insets?>
+
+<VBox xmlns:fx="http://javafx.com/fxml"
+      fx:controller="com.smarthome.controller.AutomationController"
+      stylesheets="@../css/style.css"
+      prefWidth="280" spacing="8"
+      styleClass="side-panel">
+    <padding><Insets top="12" right="12" bottom="12" left="12"/></padding>
+
+    <Label text="АВТОМАТИЗАЦИЯ" styleClass="app-title"/>
+
+    <Label text="Режим" styleClass="panel-title"/>
+    <ComboBox fx:id="automationCombo" promptText="Выбрать режим" maxWidth="Infinity"/>
+    <Button text="Применить" onAction="#onApplyAutomation" styleClass="btn-secondary"
+            maxWidth="Infinity"/>
+
+    <Separator/>
+
+    <Label text="История команд" styleClass="panel-title"/>
+    <HBox spacing="6">
+        <Button fx:id="undoButton" text="Отмена" onAction="#onUndo"
+                HBox.hgrow="ALWAYS" maxWidth="Infinity"/>
+        <Button fx:id="redoButton" text="Повтор" onAction="#onRedo"
+                HBox.hgrow="ALWAYS" maxWidth="Infinity"/>
+    </HBox>
+
+    <Separator/>
+
+    <Label text="Файл" styleClass="panel-title"/>
+    <HBox spacing="6">
+        <Button text="Сохранить" onAction="#onSaveHouse" styleClass="btn-secondary"
+                HBox.hgrow="ALWAYS" maxWidth="Infinity"/>
+        <Button text="Загрузить" onAction="#onLoadHouse" styleClass="btn-secondary"
+                HBox.hgrow="ALWAYS" maxWidth="Infinity"/>
+    </HBox>
+
+    <Separator/>
+
+    <Label fx:id="statusLabel" text="Готово" styleClass="house-info" wrapText="true"/>
+</VBox>

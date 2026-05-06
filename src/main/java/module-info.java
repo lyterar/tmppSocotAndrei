@@ -4,6 +4,9 @@ module com.smarthome {
     requires transitive javafx.graphics;
     requires com.google.gson;
     requires jdk.httpserver;
+    requires org.fxyz3d.importers;
+    requires java.sql;
+    requires org.postgresql.jdbc;
 
     opens com.smarthome to javafx.fxml;
     opens com.smarthome.controller to javafx.fxml;
@@ -26,4 +29,5 @@ module com.smarthome {
     exports com.smarthome.mcp;
     exports com.smarthome.event;
     exports com.smarthome.service;
+    exports com.smarthome.db;
 }

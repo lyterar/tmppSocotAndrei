@@ -39,6 +39,32 @@
             <version>2.10.1</version>
         </dependency>
 
+        <!-- FXyz3D: OBJ/STL model importer -->
+        <dependency>
+            <groupId>org.fxyz3d</groupId>
+            <artifactId>fxyz3d-importers</artifactId>
+            <version>0.6.0</version>
+        </dependency>
+
+        <!-- SLF4J — требуется модулем org.fxyz3d.core на module path -->
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+            <version>2.0.7</version>
+        </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-simple</artifactId>
+            <version>2.0.7</version>
+        </dependency>
+
+        <!-- PostgreSQL JDBC -->
+        <dependency>
+            <groupId>org.postgresql</groupId>
+            <artifactId>postgresql</artifactId>
+            <version>42.7.3</version>
+        </dependency>
+
         <!-- MCP Server (embedded HTTP) -->
         <!-- Uses com.sun.net.httpserver built into JDK -->
 
