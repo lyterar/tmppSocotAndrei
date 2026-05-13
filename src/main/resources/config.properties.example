@@ -1,0 +1,7 @@
+# PostgreSQL connection settings
+# Скопируй этот файл в config.properties и заполни своими данными
+db.host=localhost
+db.port=5432
+db.name=smarthome
+db.user=postgres
+db.password=YOUR_PASSWORD_HERE

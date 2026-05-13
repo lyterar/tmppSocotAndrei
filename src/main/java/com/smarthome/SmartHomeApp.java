@@ -67,6 +67,8 @@ public class SmartHomeApp extends Application {
         } catch (Exception e) {
             System.err.println("[DB] Не удалось подключиться — работаем без БД: " + e.getMessage());
         }
+        // Запускаем фоновые сервисы (опрос датчиков и др.) после загрузки данных
+        AppContext.getInstance().startServices();
     }
 
     /**
@@ -130,6 +132,7 @@ public class SmartHomeApp extends Application {
     @Override
     public void stop() {
         if (mcpServer != null) mcpServer.stop();
+        AppContext.getInstance().stopServices();
         AppContext.getInstance().getDatabase().close();
     }
 

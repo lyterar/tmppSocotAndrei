@@ -49,6 +49,10 @@
                     styleClass="btn-secondary" maxWidth="Infinity"/>
             <Button text="Журнал логирования" onAction="#onToggleLog"
                     styleClass="btn-secondary" maxWidth="Infinity"/>
+            <Button text="📅 Расписание" onAction="#onToggleScheduler"
+                    styleClass="btn-secondary" maxWidth="Infinity"/>
+            <Button text="⚡ Энергодашборд" onAction="#onToggleDashboard"
+                    styleClass="btn-secondary" maxWidth="Infinity"/>
 
             <Separator/>
 

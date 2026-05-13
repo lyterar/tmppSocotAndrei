@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.chart.*?>
+<?import javafx.geometry.Insets?>
+<?import com.smarthome.view.component.EnergyBarChart3D?>
+
+<VBox xmlns:fx="http://javafx.com/fxml"
+      fx:controller="com.smarthome.controller.DashboardController"
+      stylesheets="@../css/style.css"
+      prefWidth="520" prefHeight="680"
+      spacing="0"
+      style="-fx-background-color: #05050f;">
+
+    <!-- Заголовок -->
+    <HBox styleClass="dashboard-header" alignment="CENTER_LEFT" spacing="12">
+        <padding><Insets top="10" right="16" bottom="10" left="16"/></padding>
+        <Label text="⚡ ЭНЕРГОПОТРЕБЛЕНИЕ" styleClass="dashboard-title"/>
+        <Region HBox.hgrow="ALWAYS"/>
+        <Label fx:id="clockLabel" text="00:00:00" styleClass="dashboard-clock"/>
+    </HBox>
+
+    <!-- Метрики -->
+    <HBox spacing="0" alignment="CENTER">
+        <VBox styleClass="metric-card" alignment="CENTER" HBox.hgrow="ALWAYS" maxWidth="Infinity">
+            <padding><Insets top="10" right="8" bottom="10" left="8"/></padding>
+            <Label fx:id="currentWattsLabel" text="0 W" styleClass="metric-value"/>
+            <Label text="СЕЙЧАС" styleClass="metric-caption"/>
+        </VBox>
+        <VBox styleClass="metric-card" alignment="CENTER" HBox.hgrow="ALWAYS" maxWidth="Infinity">
+            <padding><Insets top="10" right="8" bottom="10" left="8"/></padding>
+            <Label fx:id="peakWattsLabel" text="0 W" styleClass="metric-value-peak"/>
+            <Label text="ПИК" styleClass="metric-caption"/>
+        </VBox>
+        <VBox styleClass="metric-card" alignment="CENTER" HBox.hgrow="ALWAYS" maxWidth="Infinity">
+            <padding><Insets top="10" right="8" bottom="10" left="8"/></padding>
+            <Label fx:id="kwhLabel" text="0.000 кВт·ч" styleClass="metric-value"/>
+            <Label text="ЗА СЕССИЮ" styleClass="metric-caption"/>
+        </VBox>
+        <VBox styleClass="metric-card" alignment="CENTER" HBox.hgrow="ALWAYS" maxWidth="Infinity">
+            <padding><Insets top="10" right="8" bottom="10" left="8"/></padding>
+            <Label fx:id="activeDevicesLabel" text="0" styleClass="metric-value"/>
+            <Label text="АКТИВНЫХ" styleClass="metric-caption"/>
+        </VBox>
+    </HBox>
+
+    <!-- LineChart — потребление дома во времени -->
+    <VBox style="-fx-background-color: #08081a;" VBox.vgrow="NEVER">
+        <padding><Insets top="6" right="12" bottom="0" left="12"/></padding>
+        <Label text="ПОТРЕБЛЕНИЕ ЗА 2 МИНУТЫ" styleClass="chart-section-title"/>
+        <LineChart fx:id="lineChart"
+                   prefHeight="160"
+                   styleClass="energy-line-chart"
+                   animated="false"
+                   createSymbols="false"
+                   legendVisible="false">
+            <xAxis>
+                <CategoryAxis fx:id="timeAxis" label="" tickLabelsVisible="false" tickMarkVisible="false"/>
+            </xAxis>
+            <yAxis>
+                <NumberAxis fx:id="wattsAxis" label="Вт" lowerBound="0" autoRanging="true"
+                            style="-fx-tick-label-fill: #446688; -fx-font-size: 9px;"/>
+            </yAxis>
+        </LineChart>
+    </VBox>
+
+    <!-- 3D BarChart -->
+    <VBox VBox.vgrow="ALWAYS" style="-fx-background-color: #05050f;">
+        <padding><Insets top="6" right="12" bottom="4" left="12"/></padding>
+        <HBox alignment="CENTER_LEFT" spacing="10">
+            <Label text="ПОТРЕБЛЕНИЕ ПО КОМНАТАМ (3D)" styleClass="chart-section-title"/>
+            <Label text="🖱 вращать мышью · колёсико zoom" styleClass="dashboard-hint"/>
+        </HBox>
+        <EnergyBarChart3D fx:id="barChart3D" VBox.vgrow="ALWAYS" minHeight="200"/>
+    </VBox>
+
+    <!-- Топ устройств -->
+    <VBox style="-fx-background-color: #08081a;" spacing="4">
+        <padding><Insets top="6" right="12" bottom="10" left="12"/></padding>
+        <Label text="ТОП ПОТРЕБИТЕЛЕЙ" styleClass="chart-section-title"/>
+        <ListView fx:id="topDevicesList" prefHeight="90" styleClass="dark-list top-list"/>
+    </VBox>
+
+</VBox>

@@ -25,12 +25,14 @@ import java.util.List;
 public class SmartHomeFacade {
 
     private final SmartHomeEngine engine;
-    private final DeviceEnhancementService enhancementService;
 
     public SmartHomeFacade() {
         this.engine = SmartHomeEngine.getInstance();
-        this.enhancementService = new DeviceEnhancementService(
-                engine.getHouse(), engine.getDeviceFactory());
+    }
+
+    /** Всегда создаётся с актуальным домом — корректно работает после загрузки нового дома */
+    private DeviceEnhancementService enhancement() {
+        return new DeviceEnhancementService(engine.getHouse(), engine.getDeviceFactory());
     }
 
     private DatabaseService db() {
@@ -128,7 +130,7 @@ public class SmartHomeFacade {
     // === Decorator ===
 
     public void enableLogging(String deviceId) {
-        enhancementService.enableLogging(deviceId);
+        enhancement().enableLogging(deviceId);
         engine.getEventBus().publish(new DeviceEvent("device_logging_enabled", deviceId));
     }
 
@@ -136,7 +138,7 @@ public class SmartHomeFacade {
 
     public Device createDeviceGroup(String roomId, String groupName, DeviceType type,
                                     List<String> deviceIds) {
-        Device group = enhancementService.createDeviceGroup(roomId, groupName, type, deviceIds);
+        Device group = enhancement().createDeviceGroup(roomId, groupName, type, deviceIds);
         if (group != null) {
             db().saveDevice(group, roomId);
             engine.getEventBus().publish(new DeviceEvent("device_added", group.getId()));
@@ -147,7 +149,7 @@ public class SmartHomeFacade {
     // === Proxy ===
 
     public Device addDeviceLazy(String roomId, String deviceName, DeviceType type) {
-        Device device = enhancementService.addDeviceLazy(roomId, deviceName, type);
+        Device device = enhancement().addDeviceLazy(roomId, deviceName, type);
         if (device != null) {
             db().saveDevice(device, roomId);
             engine.getEventBus().publish(new DeviceEvent("device_added", device.getId()));

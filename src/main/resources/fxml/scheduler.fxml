@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.geometry.Insets?>
+
+<VBox xmlns:fx="http://javafx.com/fxml"
+      fx:controller="com.smarthome.controller.SchedulerController"
+      stylesheets="@../css/style.css"
+      prefWidth="340" spacing="8"
+      styleClass="side-panel">
+    <padding><Insets top="12" right="12" bottom="12" left="12"/></padding>
+
+    <Label text="РАСПИСАНИЕ" styleClass="app-title"/>
+
+    <!-- Список расписаний -->
+    <Label text="Активные расписания" styleClass="panel-title"/>
+    <ListView fx:id="scheduleListView" prefHeight="220" styleClass="dark-list" VBox.vgrow="ALWAYS"/>
+
+    <HBox spacing="6">
+        <Button text="Вкл / Выкл" onAction="#onToggleEntry" styleClass="btn-toggle"
+                HBox.hgrow="ALWAYS" maxWidth="Infinity"/>
+        <Button text="−" onAction="#onRemoveEntry" styleClass="btn-danger" prefWidth="36"/>
+    </HBox>
+
+    <Separator/>
+
+    <!-- Форма добавления нового расписания -->
+    <Label text="Новое расписание" styleClass="panel-title"/>
+
+    <HBox spacing="6" alignment="CENTER_LEFT">
+        <Label text="Время:" minWidth="55"/>
+        <Spinner fx:id="hourSpinner" prefWidth="62"/>
+        <Label text=" : "/>
+        <Spinner fx:id="minuteSpinner" prefWidth="62"/>
+    </HBox>
+
+    <HBox spacing="6" alignment="CENTER_LEFT">
+        <Label text="Режим:" minWidth="55"/>
+        <ComboBox fx:id="strategyCombo" maxWidth="Infinity" HBox.hgrow="ALWAYS"/>
+    </HBox>
+
+    <HBox spacing="6" alignment="CENTER_LEFT">
+        <Label text="Область:" minWidth="55"/>
+        <ComboBox fx:id="scopeCombo" maxWidth="Infinity" HBox.hgrow="ALWAYS"/>
+    </HBox>
+
+    <HBox spacing="6" alignment="CENTER_LEFT">
+        <Label text="Комната:" minWidth="55"/>
+        <ComboBox fx:id="roomCombo" maxWidth="Infinity" HBox.hgrow="ALWAYS"
+                  promptText="(для всего дома не нужно)"/>
+    </HBox>
+
+    <!-- Дни недели -->
+    <Label text="Дни недели:" styleClass="panel-title"/>
+    <HBox spacing="4">
+        <CheckBox fx:id="cbMon" text="Пн"/>
+        <CheckBox fx:id="cbTue" text="Вт"/>
+        <CheckBox fx:id="cbWed" text="Ср"/>
+        <CheckBox fx:id="cbThu" text="Чт"/>
+        <CheckBox fx:id="cbFri" text="Пт"/>
+        <CheckBox fx:id="cbSat" text="Сб"/>
+        <CheckBox fx:id="cbSun" text="Вс"/>
+    </HBox>
+    <HBox spacing="6">
+        <Button text="Все" onAction="#onSelectAllDays" styleClass="btn-secondary"
+                HBox.hgrow="ALWAYS" maxWidth="Infinity"/>
+        <Button text="Пн–Пт" onAction="#onSelectWeekdays" styleClass="btn-secondary"
+                HBox.hgrow="ALWAYS" maxWidth="Infinity"/>
+    </HBox>
+
+    <Button text="+ Добавить расписание" onAction="#onAddEntry"
+            styleClass="btn-primary" maxWidth="Infinity"/>
+
+    <Separator/>
+
+    <Label fx:id="statusLabel" text="Планировщик активен" styleClass="house-info" wrapText="true"/>
+</VBox>

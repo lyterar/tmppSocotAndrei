@@ -15,6 +15,8 @@ public class WindowManager {
     private Stage devicePanelStage;
     private Stage automationStage;
     private Stage logStage;
+    private Stage schedulerStage;
+    private Stage dashboardStage;
 
     public WindowManager(Stage mainStage) {
         this.mainStage = mainStage;
@@ -38,8 +40,21 @@ public class WindowManager {
         if (logStage == null) {
             logStage = createStage("/fxml/log.fxml", "Журнал логирования", 420, 500);
         }
-        // Журнал открывается под главным окном
         if (logStage != null) toggleStageBelow(logStage);
+    }
+
+    public void toggleScheduler() {
+        if (schedulerStage == null) {
+            schedulerStage = createStage("/fxml/scheduler.fxml", "Расписание автоматизации", 340, 560);
+        }
+        toggleStage(schedulerStage, 150);
+    }
+
+    public void toggleDashboard() {
+        if (dashboardStage == null) {
+            dashboardStage = createStage("/fxml/dashboard.fxml", "⚡ Энергопотребление", 520, 680);
+        }
+        toggleStage(dashboardStage, 0);
     }
 
     private void toggleStage(Stage stage, double yOffset) {

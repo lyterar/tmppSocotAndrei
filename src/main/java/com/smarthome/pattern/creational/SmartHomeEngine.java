@@ -6,14 +6,12 @@ import com.smarthome.pattern.behavioral.DeviceMediator;
 import com.smarthome.pattern.behavioral.SmartHomeMediator;
 
 /**
- * ПАТТЕРН: Singleton
- *
- * Единственный экземпляр движка умного дома.
- * Хранит текущий дом, фабрику, шину событий и посредника.
+ * Singleton — центральный объект приложения.
+ * Хранит текущий дом, фабрику устройств, шину событий и медиатора.
  */
 public class SmartHomeEngine {
 
-    private static SmartHomeEngine instance;
+    private static volatile SmartHomeEngine instance;
 
     private House house;
     private final DeviceFactory deviceFactory;
@@ -29,12 +27,16 @@ public class SmartHomeEngine {
 
     public static SmartHomeEngine getInstance() {
         if (instance == null) {
-            instance = new SmartHomeEngine();
+            synchronized (SmartHomeEngine.class) {
+                if (instance == null) {
+                    instance = new SmartHomeEngine();
+                }
+            }
         }
         return instance;
     }
 
-    /** Для тестов — сброс синглтона */
+    // Только для тестов
     public static void reset() {
         instance = null;
     }

@@ -11,3 +11,6 @@ target/
 *.swp
 *~
 .DS_Store
+
+# Конфиг с паролями — не коммитить!
+src/main/resources/config.properties

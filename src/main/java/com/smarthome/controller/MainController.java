@@ -35,7 +35,7 @@ public class MainController {
     @FXML private Label statusLabel;
     @FXML private Label houseInfoLabel;
 
-    private final SmartHomeFacade facade = new SmartHomeFacade();
+    private final SmartHomeFacade facade = AppContext.getInstance().getFacade();
     private final ObservableList<Room> roomItems = FXCollections.observableArrayList();
     private Room selectedRoom;
     // Флаг подавляет событие room_selected во время программного обновления списка
@@ -143,6 +143,16 @@ public class MainController {
     }
 
     @FXML
+    private void onToggleScheduler() {
+        getWindowManager().toggleScheduler();
+    }
+
+    @FXML
+    private void onToggleDashboard() {
+        getWindowManager().toggleDashboard();
+    }
+
+    @FXML
     private void onLoadObjModel() {
         LoadModelDialog dialog = new LoadModelDialog(
                 (Stage) room3DView.getScene().getWindow());
@@ -169,13 +179,6 @@ public class MainController {
                     room3DView.drawHouse(facade.getHouse());
                     updateStatus("Модель «" + modelName + "» → все устройства типа «"
                             + result.deviceType().getDisplayName() + "»");
-                } else if (result.roomType() != null) {
-                    ModelRegistry.getInstance().registerForRoomType(result.roomType(), model);
-                    AppContext.getInstance().getDatabase()
-                            .saveModelEntry("ROOM", result.roomType().name(), url);
-                    room3DView.drawHouse(facade.getHouse());
-                    updateStatus("Модель «" + modelName + "» → все комнаты типа «"
-                            + result.roomType().getDisplayName() + "»");
                 } else {
                     room3DView.addExternalModel(model);
                     updateStatus("Модель загружена в сцену: " + modelName);

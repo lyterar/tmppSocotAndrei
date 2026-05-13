@@ -4,12 +4,15 @@ import com.smarthome.AppContext;
 import com.smarthome.event.DeviceEvent;
 import com.smarthome.model.house.House;
 import com.smarthome.model.room.Room;
+import com.smarthome.pattern.behavioral.ApplyStrategyCommand;
 import com.smarthome.pattern.behavioral.AutomationStrategy;
 import com.smarthome.pattern.behavioral.CommandHistory;
 import com.smarthome.pattern.creational.SmartHomeEngine;
 import com.smarthome.pattern.structural.SmartHomeFacade;
 import com.smarthome.service.AutomationService;
 import com.smarthome.service.HouseSaveService;
+
+import java.util.List;
 
 import javafx.application.Platform;
 import javafx.fxml.FXML;
@@ -29,7 +32,7 @@ public class AutomationController {
     @FXML private Button redoButton;
     @FXML private Label statusLabel;
 
-    private final SmartHomeFacade facade = new SmartHomeFacade();
+    private final SmartHomeFacade facade = AppContext.getInstance().getFacade();
     private final CommandHistory commandHistory = AppContext.getInstance().getCommandHistory();
     private final AutomationService automationService = AppContext.getInstance().getAutomationService();
     private final HouseSaveService saveService = AppContext.getInstance().getSaveService();
@@ -75,13 +78,18 @@ public class AutomationController {
             showWarning("Выберите режим автоматизации");
             return;
         }
+        List<Room> targets;
+        String statusMsg;
         if (selectedRoom != null) {
-            automationService.applyStrategy(strategy, selectedRoom);
-            updateStatus(strategy.getName() + " применён к " + selectedRoom.getName());
+            targets = List.of(selectedRoom);
+            statusMsg = strategy.getName() + " применён к " + selectedRoom.getName();
         } else {
-            automationService.applyToAll(strategy);
-            updateStatus(strategy.getName() + " применён ко всему дому");
+            targets = facade.getHouse().getRooms();
+            statusMsg = strategy.getName() + " применён ко всему дому";
         }
+        // Оборачиваем стратегию в команду — теперь поддерживает Undo/Redo
+        commandHistory.executeCommand(new ApplyStrategyCommand(strategy, targets));
+        updateStatus(statusMsg);
         SmartHomeEngine.getInstance().getEventBus().publish(
                 new DeviceEvent("automation_applied", ""));
     }

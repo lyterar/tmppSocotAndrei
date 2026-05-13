@@ -30,7 +30,7 @@ public class DevicePanelController {
     @FXML private ListView<Device> deviceListView;
     @FXML private Label houseInfoLabel;
 
-    private final SmartHomeFacade facade = new SmartHomeFacade();
+    private final SmartHomeFacade facade = AppContext.getInstance().getFacade();
     private final CommandHistory commandHistory = AppContext.getInstance().getCommandHistory();
     private final ObservableList<Room> roomItems = FXCollections.observableArrayList();
     private final ObservableList<Device> deviceItems = FXCollections.observableArrayList();

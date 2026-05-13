@@ -10,9 +10,12 @@ import com.smarthome.model.room.RoomType;
 import com.smarthome.pattern.creational.DeviceFactory;
 
 import java.lang.reflect.Type;
+import java.io.IOException;
+import java.io.InputStream;
 import java.sql.*;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Properties;
 
 /**
  * Сервис работы с PostgreSQL.
@@ -24,17 +27,35 @@ import java.util.Map;
  */
 public class DatabaseService {
 
-    private static final String HOST = "localhost";
-    private static final int    PORT = 5432;
-    private static final String DB   = "smarthome";
-    private static final String USER = "postgres";
-    private static final String PASS = "10092004";
-
-    private static final String URL      = "jdbc:postgresql://" + HOST + ":" + PORT + "/" + DB;
-    private static final String BASE_URL = "jdbc:postgresql://" + HOST + ":" + PORT + "/postgres";
+    private final String URL;
+    private final String BASE_URL;
+    private final String USER;
+    private final String PASS;
+    private final String DB_NAME;
 
     private Connection conn;
     private final Gson gson = new Gson();
+
+    public DatabaseService() {
+        Properties props = new Properties();
+        try (InputStream in = getClass().getResourceAsStream("/config.properties")) {
+            if (in != null) {
+                props.load(in);
+            } else {
+                System.err.println("[DB] config.properties не найден, используются значения по умолчанию");
+            }
+        } catch (IOException e) {
+            System.err.println("[DB] Ошибка чтения config.properties: " + e.getMessage());
+        }
+        String host   = props.getProperty("db.host", "localhost");
+        String port   = props.getProperty("db.port", "5432");
+        String db     = props.getProperty("db.name", "smarthome");
+        this.USER     = props.getProperty("db.user", "postgres");
+        this.PASS     = props.getProperty("db.password", "");
+        this.DB_NAME  = db;
+        this.URL      = "jdbc:postgresql://" + host + ":" + port + "/" + db;
+        this.BASE_URL = "jdbc:postgresql://" + host + ":" + port + "/postgres";
+    }
 
     // =========================================================
     //  Подключение и инициализация
@@ -55,10 +76,10 @@ public class DatabaseService {
         try (Connection c = DriverManager.getConnection(BASE_URL, USER, PASS);
              Statement st = c.createStatement()) {
             ResultSet rs = st.executeQuery(
-                    "SELECT 1 FROM pg_database WHERE datname='" + DB + "'");
+                    "SELECT 1 FROM pg_database WHERE datname='" + DB_NAME + "'");
             if (!rs.next()) {
-                st.execute("CREATE DATABASE " + DB);
-                System.out.println("[DB] База данных '" + DB + "' создана");
+                st.execute("CREATE DATABASE " + DB_NAME);
+                System.out.println("[DB] База данных '" + DB_NAME + "' создана");
             }
         } catch (SQLException e) {
             System.err.println("[DB] Не удалось создать БД: " + e.getMessage());
